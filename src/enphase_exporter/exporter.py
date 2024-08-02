@@ -63,156 +63,236 @@ class CustomCollector:
 
         metrics = {
             "apprnt_pwr": GaugeMetricFamily(
-                "solar_apprnt_pwr",
+                "solar_flow_apprnt_pwr",
                 "Apparent power",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "pwr_factor": GaugeMetricFamily(
-                "solar_pwr_factor",
+                "solar_flow_pwr_factor",
                 "Power factor",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "react_pwr": GaugeMetricFamily(
-                "solar_react_pwr",
+                "solar_flow_react_pwr",
                 "Reactive power",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "vah_today": GaugeMetricFamily(
-                "solar_vah_today",
+                "solar_flow_vah_today",
                 "Volt-amp-hours today",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "vah_lifetime": CounterMetricFamily(
-                "solar_vah_lifetime",
+                "solar_flow_vah_lifetime",
                 "Volt-amp-hours lifetime",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "varh_lag_today": GaugeMetricFamily(
-                "solar_varh_lag_today",
+                "solar_flow_varh_lag_today",
                 "Volt-amp-reactive-hours lag today",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "varh_lag_lifetime": CounterMetricFamily(
-                "solar_varh_lag_lifetime",
+                "solar_flow_varh_lag_lifetime",
                 "Volt-amp-reactive-hours lag lifetime",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "varh_lead_today": GaugeMetricFamily(
-                "solar_varh_lead_today",
+                "solar_flow_varh_lead_today",
                 "Volt-amp-reactive-hours lead today",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "varh_lead_lifetime": CounterMetricFamily(
-                "solar_varh_lead_lifetime",
+                "solar_flow_varh_lead_lifetime",
                 "Volt-amp-reactive-hours lead lifetime",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "w_now": GaugeMetricFamily(
-                "solar_w_now",
+                "solar_flow_w_now",
                 "Current watts",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "wh_today": GaugeMetricFamily(
-                "solar_wh_today",
+                "solar_flow_wh_today",
                 "Watt-hours today",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "wh_last7days": GaugeMetricFamily(
-                "solar_wh_last7days",
+                "solar_flow_wh_last7days",
                 "Watt-hours last seven days",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "wh_lifetime": CounterMetricFamily(
-                "solar_wh_lifetime",
+                "solar_flow_wh_lifetime",
                 "Watt-hours lifetime",
-                labels=["meter"],
+                labels=["direction", "device_type", "measurement_type"],
+            ),
+            "active_count": GaugeMetricFamily(
+                "solar_flow_active_count",
+                "Active device count",
+                labels=["direction", "device_type", "measurement_type"],
+            ),
+            "reading_time": GaugeMetricFamily(
+                "solar_flow_reading_time",
+                "Time of the measurement (referenced to the Unix epoch)",
+                labels=["direction", "device_type", "measurement_type"],
+            ),
+            "rms_current": GaugeMetricFamily(
+                "solar_flow_rms_current",
+                "RMS current",
+                labels=["direction", "device_type", "measurement_type"],
+            ),
+            "rms_voltage": GaugeMetricFamily(
+                "solar_flow_rms_voltage",
+                "RMS voltage",
+                labels=["direction", "device_type", "measurement_type"],
+            ),
+            "wh_now": GaugeMetricFamily(
+                "solar_flow_wh_now",
+                "Current watt-hours (battery energy)",
+                labels=["direction", "device_type", "measurement_type"],
             ),
             "last_report_watts": GaugeMetricFamily(
                 "solar_inverter_last_report_watts",
-                "Watts reported by solar panel",
-                labels=["panel"],
+                "Watts reported by the panel inverter",
+                labels=["serial_num", "dev_type"],
+            ),
+            "max_report_watts": GaugeMetricFamily(
+                "solar_inverter_max_report_watts",
+                "Max watts ever seen by the panel inverter",
+                labels=["serial_num", "dev_type"],
             ),
             "last_report_time": GaugeMetricFamily(
                 "solar_inverter_last_report_time",
                 "Time of last report",
-                labels=["panel"],
+                labels=["serial_num", "dev_type"],
             ),
         }
 
+        # Inverters, individual power production reports
         for inverter in data["inverters"]:
+            labels = [inverter["serialNumber"], str(inverter["devType"])]
             metrics["last_report_watts"].add_metric(
-                [inverter["serialNumber"]],
+                labels,
                 inverter["lastReportWatts"],
             )
+            metrics["max_report_watts"].add_metric(
+                labels,
+                inverter["maxReportWatts"],
+            )
             metrics["last_report_time"].add_metric(
-                [inverter["serialNumber"]],
+                labels,
                 inverter["lastReportDate"],
             )
 
-        for datum in data["production"]["production"]:
-            if datum.get("measurementType", "") == "production":
-                metrics["apprnt_pwr"].add_metric(["production"], datum["apprntPwr"])
-                metrics["pwr_factor"].add_metric(["production"], datum["pwrFactor"])
-                metrics["react_pwr"].add_metric(["production"], datum["reactPwr"])
-                metrics["vah_today"].add_metric(["production"], datum["vahToday"])
-                metrics["vah_lifetime"].add_metric(["production"], datum["vahLifetime"])
-                metrics["varh_lag_today"].add_metric(
-                    ["production"],
-                    datum["varhLagToday"],
-                )
-                metrics["varh_lag_lifetime"].add_metric(
-                    ["production"],
-                    datum["varhLagLifetime"],
-                )
-                metrics["varh_lead_today"].add_metric(
-                    ["production"],
-                    datum["varhLeadToday"],
-                )
-                metrics["varh_lead_lifetime"].add_metric(
-                    ["production"],
-                    datum["varhLeadLifetime"],
-                )
-                metrics["w_now"].add_metric(["production"], datum["wNow"])
-                metrics["wh_today"].add_metric(["production"], datum["whToday"])
-                metrics["wh_last7days"].add_metric(
-                    ["production"],
-                    datum["whLastSevenDays"],
-                )
-                metrics["wh_lifetime"].add_metric(["production"], datum["whLifetime"])
+        # System power flows
 
-        for datum in data["production"]["consumption"]:
-            if datum.get("measurementType", "") == "total-consumption":
-                metrics["apprnt_pwr"].add_metric(["consumption"], datum["apprntPwr"])
-                metrics["pwr_factor"].add_metric(["consumption"], datum["pwrFactor"])
-                metrics["react_pwr"].add_metric(["consumption"], datum["reactPwr"])
-                metrics["vah_today"].add_metric(["consumption"], datum["vahToday"])
-                metrics["vah_lifetime"].add_metric(
-                    ["consumption"],
-                    datum["vahLifetime"],
-                )
+        # Production power flow
+        for datum in data["production"]["production"]:
+
+            # Inverter reported production, aggregate
+            if datum.get("type", "") == "inverters":
+                labels = ["production", datum["type"], "inverters_production"]
+                metrics["active_count"].add_metric(labels, datum["activeCount"])
+                metrics["reading_time"].add_metric(labels, datum["readingTime"])
+                metrics["w_now"].add_metric(labels, datum["wNow"])
+                metrics["wh_lifetime"].add_metric(labels, datum["whLifetime"])
+
+            # TODO: handle the following meter types:
+            # Revenue Grade Meter: type == "rgms"
+            # Power Meter Unit: type == "pmus"
+
+            # Envoy Integrated Meter measured production
+            if datum.get("type", "") == "eim":
+                labels = ["production", datum["type"], datum["measurementType"]]
+                metrics["apprnt_pwr"].add_metric(labels, datum["apprntPwr"])
+                metrics["pwr_factor"].add_metric(labels, datum["pwrFactor"])
+                metrics["react_pwr"].add_metric(labels, datum["reactPwr"])
+                metrics["vah_today"].add_metric(labels, datum["vahToday"])
+                metrics["vah_lifetime"].add_metric(labels, datum["vahLifetime"])
                 metrics["varh_lag_today"].add_metric(
-                    ["consumption"],
+                    labels,
                     datum["varhLagToday"],
                 )
                 metrics["varh_lag_lifetime"].add_metric(
-                    ["consumption"],
+                    labels,
                     datum["varhLagLifetime"],
                 )
                 metrics["varh_lead_today"].add_metric(
-                    ["consumption"],
+                    labels,
                     datum["varhLeadToday"],
                 )
                 metrics["varh_lead_lifetime"].add_metric(
-                    ["consumption"],
+                    labels,
                     datum["varhLeadLifetime"],
                 )
-                metrics["w_now"].add_metric(["consumption"], datum["wNow"])
-                metrics["wh_today"].add_metric(["consumption"], datum["whToday"])
+                metrics["w_now"].add_metric(labels, datum["wNow"])
+                metrics["wh_today"].add_metric(labels, datum["whToday"])
                 metrics["wh_last7days"].add_metric(
-                    ["consumption"],
+                    labels,
                     datum["whLastSevenDays"],
                 )
-                metrics["wh_lifetime"].add_metric(["consumption"], datum["whLifetime"])
+                metrics["wh_lifetime"].add_metric(labels, datum["whLifetime"])
+                metrics["active_count"].add_metric(labels, datum["activeCount"])
+                metrics["reading_time"].add_metric(labels, datum["readingTime"])
+                metrics["rms_current"].add_metric(labels, datum["rmsCurrent"])
+                metrics["rms_voltage"].add_metric(labels, datum["rmsVoltage"])
+
+        # Consumption power flow
+        for datum in data["production"]["consumption"]:
+
+            # TODO: handle the following meter types:
+            # Revenue Grade Meter: type == "rgms"
+            # Power Meter Unit: type == "pmus"
+
+            # Envoy Integrated Meter measured consumption
+            if datum.get("type", "") == "eim":
+                labels = ["consumption", datum["type"], datum["measurementType"]]
+                metrics["apprnt_pwr"].add_metric(labels, datum["apprntPwr"])
+                metrics["pwr_factor"].add_metric(labels, datum["pwrFactor"])
+                metrics["react_pwr"].add_metric(labels, datum["reactPwr"])
+                metrics["vah_today"].add_metric(labels, datum["vahToday"])
+                metrics["vah_lifetime"].add_metric(labels, datum["vahLifetime"])
+                metrics["varh_lag_today"].add_metric(
+                    labels,
+                    datum["varhLagToday"],
+                )
+                metrics["varh_lag_lifetime"].add_metric(
+                    labels,
+                    datum["varhLagLifetime"],
+                )
+                metrics["varh_lead_today"].add_metric(
+                    labels,
+                    datum["varhLeadToday"],
+                )
+                metrics["varh_lead_lifetime"].add_metric(
+                    labels,
+                    datum["varhLeadLifetime"],
+                )
+                metrics["w_now"].add_metric(labels, datum["wNow"])
+                metrics["wh_today"].add_metric(labels, datum["whToday"])
+                metrics["wh_last7days"].add_metric(
+                    labels,
+                    datum["whLastSevenDays"],
+                )
+                metrics["wh_lifetime"].add_metric(labels, datum["whLifetime"])
+                metrics["active_count"].add_metric(labels, datum["activeCount"])
+                metrics["reading_time"].add_metric(labels, datum["readingTime"])
+                metrics["rms_current"].add_metric(labels, datum["rmsCurrent"])
+                metrics["rms_voltage"].add_metric(labels, datum["rmsVoltage"])
+
+        # Storage power flow
+        for datum in data["production"]["storage"]:
+
+            # AC Battery
+            if datum.get("type", "") == "acb":
+                labels = ["storage", datum["type"], "batteries"]
+                metrics["active_count"].add_metric(labels, datum["activeCount"])
+                metrics["reading_time"].add_metric(labels, datum["readingTime"])
+                metrics["w_now"].add_metric(labels, datum["wNow"])
+                metrics["wh_now"].add_metric(labels, datum["whNow"])
+                # TODO Translate "state" values into a metric
+                # (full, charging, idle, discharging)
 
         yield from metrics.values()
 
